@@ -1,7 +1,8 @@
-import { employees } from '../../data/mockData';
+import { useEmployees } from '../../hooks/useEmployees';
 import { User, Mail, Phone, DollarSign, Clock } from 'lucide-react';
 
 export default function EmployeesPage() {
+  const { employees } = useEmployees();
   const clockedInEmployees = employees.filter((emp) => emp.clockedIn);
 
   return (
@@ -77,7 +78,7 @@ export default function EmployeesPage() {
               </div>
               <div className="flex items-center gap-3 text-gray-600">
                 <DollarSign className="w-5 h-5" />
-                <span>₱{emp.hourlyRate}/hour</span>
+                <span>₱{emp.hourlyRate}/hour</span> 
               </div>
             </div>
           </div>

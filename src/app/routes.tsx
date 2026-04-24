@@ -8,6 +8,7 @@ import InventoryPage from "./pages/owner/InventoryPage";
 import EmployeesPage from "./pages/owner/EmployeesPage";
 import StaffPOS from "./pages/staff/StaffPOS";
 import TimeClock from "./pages/staff/TimeClock";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 export const router = createBrowserRouter([
   {
@@ -16,7 +17,11 @@ export const router = createBrowserRouter([
   },
   {
     path: "/owner",
-    Component: OwnerLayout,
+    element: (
+      <ProtectedRoute allowedRole="owner">
+        <OwnerLayout />
+      </ProtectedRoute>
+    ),
     children: [
       { index: true, Component: AnalyticsDashboard },
       { path: "orders", Component: OrdersPage },
@@ -26,9 +31,14 @@ export const router = createBrowserRouter([
   },
   {
     path: "/staff",
-    Component: StaffLayout,
+    element: (
+      <ProtectedRoute allowedRole="staff">
+        <StaffLayout />
+      </ProtectedRoute>
+    ),
     children: [
       { index: true, Component: StaffPOS },
+      { path: "orders", Component: OrdersPage },
       { path: "timeclock", Component: TimeClock },
     ],
   },

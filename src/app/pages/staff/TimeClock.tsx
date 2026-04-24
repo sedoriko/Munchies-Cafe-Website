@@ -1,18 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Clock, LogIn, LogOut, User } from 'lucide-react';
 import { Button } from '../../components/ui/button';
-import { employees } from '../../data/mockData';
+import { useEmployees } from '../../hooks/useEmployees';
 import { toast } from 'sonner';
 
 export default function TimeClock() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
-  const [clockedInStaff, setClockedInStaff] = useState(
-    employees.filter((emp) => emp.clockedIn).map((emp) => ({
-      ...emp,
-      clockInTime: emp.lastClockIn || new Date(),
-    }))
-  );
+  const { employees, clockIn, clockOut } = useEmployees();
+
+  const clockedInStaff = employees.filter((emp) => emp.clockedIn);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -30,21 +27,12 @@ export default function TimeClock() {
     const employee = employees.find((emp) => emp.id === selectedEmployee);
     if (!employee) return;
 
-    const alreadyClockedIn = clockedInStaff.find((staff) => staff.id === selectedEmployee);
-    if (alreadyClockedIn) {
+    if (employee.clockedIn) {
       toast.error(`${employee.name} is already clocked in`);
       return;
     }
 
-    setClockedInStaff([
-      ...clockedInStaff,
-      {
-        ...employee,
-        clockedIn: true,
-        clockInTime: new Date(),
-      },
-    ]);
-
+    clockIn(selectedEmployee);
     toast.success(`${employee.name} clocked in successfully`);
     setSelectedEmployee('');
   };
@@ -53,17 +41,16 @@ export default function TimeClock() {
     const employee = employees.find((emp) => emp.id === employeeId);
     if (!employee) return;
 
-    const staffMember = clockedInStaff.find((staff) => staff.id === employeeId);
-    if (!staffMember) return;
+    if (!employee.lastClockIn) return;
 
-    const hoursWorked = (new Date().getTime() - staffMember.clockInTime.getTime()) / (1000 * 60 * 60);
+    const hoursWorked = (new Date().getTime() - new Date(employee.lastClockIn).getTime()) / (1000 * 60 * 60);
 
-    setClockedInStaff(clockedInStaff.filter((staff) => staff.id !== employeeId));
+    clockOut(employeeId);
     toast.success(`${employee.name} clocked out. Hours worked: ${hoursWorked.toFixed(2)}`);
   };
 
   const getHoursWorked = (clockInTime: Date) => {
-    const hours = (currentTime.getTime() - clockInTime.getTime()) / (1000 * 60 * 60);
+    const hours = (currentTime.getTime() - new Date(clockInTime).getTime()) / (1000 * 60 * 60);
     return hours.toFixed(2);
   };
 
@@ -152,12 +139,12 @@ export default function TimeClock() {
                     <div>
                       <p className="text-sm text-gray-600">Clock In Time</p>
                       <p className="text-gray-900">
-                        {staff.clockInTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                        {staff.lastClockIn?.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">Hours Worked</p>
-                      <p className="text-gray-900">{getHoursWorked(staff.clockInTime)} hrs</p>
+                      <p className="text-gray-900">{staff.lastClockIn ? getHoursWorked(staff.lastClockIn) : '0.00'} hrs</p>
                     </div>
                   </div>
                 </div>

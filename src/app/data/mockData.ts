@@ -126,11 +126,11 @@ export const weeklyData = [
   { weekStart: '2026-02-16', weekEnd: '2026-02-22', gross: 52464 },
   { weekStart: '2026-02-23', weekEnd: '2026-03-01', gross: 33218 },
   { weekStart: '2026-03-02', weekEnd: '2026-03-08', gross: 40823 },
-  { weekStart: '2026-03-09', weekEnd: '2026-03-14', gross: 24648 },
-  { weekStart: '2026-03-15', weekEnd: '2026-03-21', gross: 57172 },
-  { weekStart: '2026-03-22', weekEnd: '2026-03-28', gross: 39754 },
-  { weekStart: '2026-03-29', weekEnd: '2026-04-04', gross: 64633 },
-  { weekStart: '2026-04-05', weekEnd: '2026-04-11', gross: 57030 },
+  { weekStart: '2026-03-09', weekEnd: '2026-03-15', gross: 24648 },
+  { weekStart: '2026-03-16', weekEnd: '2026-03-22', gross: 57172 },
+  { weekStart: '2026-03-23', weekEnd: '2026-03-29', gross: 39754 },
+  { weekStart: '2026-03-30', weekEnd: '2026-04-05', gross: 64633 },
+  { weekStart: '2026-04-06', weekEnd: '2026-04-12', gross: 57030 },
 ];
 
 // Mock orders
