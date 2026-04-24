@@ -41,3 +41,4 @@ GEMINI.md
 supabase-pin-auth.md
 guidelines/
 .gemini/
+node_modules
