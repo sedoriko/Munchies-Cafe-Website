@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { TrendingUp, Calendar, Trophy, ChevronRight, Loader2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Calendar, Trophy, ChevronRight, Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import {
   Dialog,
@@ -37,6 +37,9 @@ export default function AnalyticsDashboard() {
     );
   }
 
+  const DAILY_GOAL = 5000;
+  const dailyProgress = Math.min((stats.dailyGross / DAILY_GOAL) * 100, 100);
+
   return (
     <div className="p-8">
       <div className="mb-8">
@@ -45,14 +48,38 @@ export default function AnalyticsDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Daily Gross</p>
-              <p className="text-3xl text-gray-900">₱{stats.dailyGross.toLocaleString()}</p>
+        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="flex items-start justify-between mb-2">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Daily Gross</p>
+                <p className="text-3xl text-gray-900">₱{stats.dailyGross.toLocaleString()}</p>
+              </div>
+              <div className={`p-3 rounded-lg ${stats.dailyGross >= DAILY_GOAL ? 'bg-green-100' : 'bg-amber-100'}`}>
+                {stats.dailyGross >= DAILY_GOAL ? (
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                ) : (
+                  <TrendingUp className="w-5 h-5 text-amber-600" />
+                )}
+              </div>
             </div>
-            <div className="bg-green-100 p-3 rounded-lg">
-              <TrendingUp className="w-5 h-5 text-green-600" />
+            
+            <div className="mb-4">
+              <div className="flex justify-between text-xs mb-1">
+                <span className="text-gray-500">Goal: ₱{DAILY_GOAL.toLocaleString()}</span>
+                <span className={stats.dailyGross >= DAILY_GOAL ? "text-green-600 font-medium" : "text-amber-600"}>
+                  {Math.round(dailyProgress)}%
+                </span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-2">
+                <div 
+                  className={`h-2 rounded-full transition-all duration-500 ${stats.dailyGross >= DAILY_GOAL ? 'bg-green-500' : 'bg-amber-500'}`}
+                  style={{ width: `${dailyProgress}%` }}
+                ></div>
+              </div>
+              {stats.dailyGross >= DAILY_GOAL && (
+                <p className="text-[10px] text-green-600 mt-1 font-medium">Daily goal achieved!</p>
+              )}
             </div>
           </div>
           <p className="text-sm text-gray-600">
@@ -65,6 +92,18 @@ export default function AnalyticsDashboard() {
             <div>
               <p className="text-sm text-gray-600 mb-1">Weekly Gross (Current)</p>
               <p className="text-3xl text-gray-900">₱{stats.weeklyGross.toLocaleString()}</p>
+              {stats.lastWeeklyGross > 0 && (
+                <div className={`flex items-center gap-1 text-xs mt-1 font-medium ${stats.weeklyGross >= stats.lastWeeklyGross ? 'text-green-600' : 'text-rose-600'}`}>
+                  {stats.weeklyGross >= stats.lastWeeklyGross ? (
+                    <TrendingUp className="w-3 h-3" />
+                  ) : (
+                    <TrendingDown className="w-3 h-3" />
+                  )}
+                  <span>
+                    ₱{Math.abs(stats.weeklyGross - stats.lastWeeklyGross).toLocaleString()} {stats.weeklyGross >= stats.lastWeeklyGross ? 'more' : 'less'} than last week
+                  </span>
+                </div>
+              )}
             </div>
             <div className="bg-blue-100 p-3 rounded-lg">
               <Calendar className="w-5 h-5 text-blue-600" />

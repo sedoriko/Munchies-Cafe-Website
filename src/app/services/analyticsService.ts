@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 export interface DashboardStats {
   dailyGross: number;
   weeklyGross: number;
+  lastWeeklyGross: number;
   topItemName: string;
   topItemSales: number;
   topItemOrders: number;
@@ -39,6 +40,20 @@ export const analyticsService = {
       .gte('created_at', currentMonday.toISOString());
     
     const weeklyGross = weeklyData?.reduce((sum, o) => sum + Number(o.total), 0) || 0;
+
+    // 2.5 Get Last Weekly Gross
+    const lastMonday = new Date(currentMonday);
+    lastMonday.setDate(lastMonday.getDate() - 7);
+    const lastSunday = new Date(currentMonday);
+    lastSunday.setMilliseconds(-1);
+
+    const { data: lastWeeklyData } = await supabase
+      .from('orders')
+      .select('total')
+      .gte('created_at', lastMonday.toISOString())
+      .lte('created_at', lastSunday.toISOString());
+    
+    const lastWeeklyGross = lastWeeklyData?.reduce((sum, o) => sum + Number(o.total), 0) || 0;
 
     // 3. Get Sales Trend (Last 7 days)
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -106,6 +121,7 @@ export const analyticsService = {
     return {
       dailyGross,
       weeklyGross,
+      lastWeeklyGross,
       topItemName: topProducts[0]?.name || 'N/A',
       topItemSales: topProducts[0]?.netSales || 0,
       topItemOrders: topProducts[0]?.orders || 0,
