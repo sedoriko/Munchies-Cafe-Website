@@ -76,10 +76,6 @@ export default function EmployeesPage() {
                 <Phone className="w-5 h-5" />
                 <span>{emp.phone}</span>
               </div>
-              <div className="flex items-center gap-3 text-gray-600">
-                <DollarSign className="w-5 h-5" />
-                <span>₱{emp.hourlyRate}/hour</span> 
-              </div>
             </div>
           </div>
         ))}

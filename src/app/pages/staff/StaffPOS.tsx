@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { menuItems, categories, addOns, MenuItem } from '../../data/menuData';
-import { Plus, Minus, Trash2, ShoppingCart, CreditCard, User, Menu } from 'lucide-react';
+import { Plus, Minus, Trash2, ShoppingCart, CreditCard, User, Menu, Package, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import {
   Dialog,
@@ -19,6 +19,7 @@ import {
 } from "../../components/ui/sheet";
 import { toast } from 'sonner';
 import { orderService } from '../../services/orderService';
+import { inventoryService, InventoryItem } from '../../services/inventoryService';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEmployees } from '../../hooks/useEmployees';
 
@@ -45,6 +46,10 @@ export default function StaffPOS() {
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<string>('');
   const [cartOpen, setCartOpen] = useState(false);
+  
+  // Inventory State
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [loadingInventory, setLoadingInventory] = useState(false);
 
   // Track which clocked-in staff is taking orders
   const clockedInEmployees = employees.filter(emp => emp.clockedIn);
@@ -63,6 +68,31 @@ export default function StaffPOS() {
   const activeStaff = employees.find(emp => emp.id === activeStaffId) || user;
 
   const filteredItems = menuItems.filter((item) => item.category === selectedCategory);
+
+  const fetchInventory = async () => {
+    setLoadingInventory(true);
+    try {
+      const data = await inventoryService.getInventory();
+      setInventoryItems(data);
+    } catch (error) {
+      console.error('Failed to fetch inventory:', error);
+    } finally {
+      setLoadingInventory(false);
+    }
+  };
+
+  const handleQuickStockUpdate = async (item: InventoryItem, type: 'add' | 'remove') => {
+    const amount = 1;
+    const newStock = type === 'add' ? item.stock + amount : Math.max(0, item.stock - amount);
+    
+    try {
+      await inventoryService.updateStock(item.id, newStock, type === 'add');
+      toast.success(`${item.name} updated`);
+      fetchInventory();
+    } catch (error) {
+      toast.error('Failed to update stock');
+    }
+  };
 
   const addToCart = () => {
     if (!selectedItem) return;
@@ -317,6 +347,49 @@ export default function StaffPOS() {
     </div>
   );
 
+  const InventoryContent = () => (
+    <div className="flex flex-col h-full">
+      <SheetHeader className="p-6 border-b border-gray-100">
+        <SheetTitle className="flex items-center gap-2 text-2xl font-bold">
+          <Package className="w-6 h-6 text-amber-600" />
+          Quick Inventory
+        </SheetTitle>
+        <p className="text-sm text-gray-500">Record deliveries (+) or waste (-)</p>
+      </SheetHeader>
+      
+      <div className="flex-1 overflow-auto p-4 space-y-3">
+        {loadingInventory ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-amber-600" />
+          </div>
+        ) : (
+          inventoryItems.map((item) => (
+            <div key={item.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="font-bold text-gray-900">{item.name}</p>
+                <p className="text-[10px] text-gray-400 font-bold uppercase">{item.stock} {item.unit} available</p>
+              </div>
+              <div className="flex gap-2">
+                <button 
+                  className="h-9 w-9 flex items-center justify-center rounded-lg border border-red-100 text-red-600 hover:bg-red-50 transition-colors"
+                  onClick={() => handleQuickStockUpdate(item, 'remove')}
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+                <button 
+                  className="h-9 w-9 flex items-center justify-center rounded-lg border border-green-100 text-green-600 hover:bg-green-50 transition-colors"
+                  onClick={() => handleQuickStockUpdate(item, 'add')}
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex h-full bg-gray-50 overflow-hidden relative">
       {/* Main POS Area */}
@@ -324,24 +397,40 @@ export default function StaffPOS() {
         <div className="p-4 md:p-6 overflow-auto">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Point of Sale</h1>
-            {/* Mobile Cart Trigger */}
-            <div className="lg:hidden">
-              <Sheet open={cartOpen} onOpenChange={setCartOpen}>
+            
+            <div className="flex items-center gap-2">
+              {/* Quick Inventory Trigger */}
+              <Sheet onOpenChange={(open) => open && fetchInventory()}>
                 <SheetTrigger asChild>
-                  <Button variant="outline" className="relative bg-white border-amber-200 text-amber-700 font-bold">
-                    <ShoppingCart className="w-5 h-5 mr-2" />
-                    Cart
-                    {cart.length > 0 && (
-                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">
-                        {cart.length}
-                      </span>
-                    )}
+                  <Button variant="outline" className="bg-white border-amber-200 text-amber-700 font-bold">
+                    <Package className="w-4 h-4 mr-2" />
+                    <span className="hidden sm:inline">Stock</span>
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="p-0 border-none w-full sm:max-w-md">
-                  <CartContent />
+                <SheetContent side="right" className="p-0 border-none w-full sm:max-w-sm">
+                  <InventoryContent />
                 </SheetContent>
               </Sheet>
+
+              {/* Mobile Cart Trigger */}
+              <div className="lg:hidden">
+                <Sheet open={cartOpen} onOpenChange={setCartOpen}>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" className="relative bg-white border-amber-200 text-amber-700 font-bold">
+                      <ShoppingCart className="w-5 h-5 mr-2" />
+                      Cart
+                      {cart.length > 0 && (
+                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">
+                          {cart.length}
+                        </span>
+                      )}
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="p-0 border-none w-full sm:max-w-md">
+                    <CartContent />
+                  </SheetContent>
+                </Sheet>
+              </div>
             </div>
           </div>
 
